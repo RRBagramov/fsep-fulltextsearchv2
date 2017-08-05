@@ -24,13 +24,13 @@ public class CommentSearchDaoImpl implements CommentDao {
     private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY
             = "SELECT id, text, secondsfromstart " +
             "FROM comment, plainto_tsquery('ru', :searchQuery) query " +
-            "WHERE fts @@ query OR comment.text ~* :searchQuery2";
+            "WHERE fts @@ query OR comment.text ~* :searchQuery2 order by similarity(text, :searchQuery) desc, secondsfromstart";
 
     //language=SQL
     private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_BY_SIMILARITY =
             "SELECT id, text, secondsfromstart " +
                     " FROM comment" +
-                    " WHERE comment.text % :searchQuery";
+                    " WHERE comment.text % :searchQuery order by similarity(text, :searchQuery) desc, secondsfromstart";
 
     @Override
     public List<Comment> getComments(String searchComment) {

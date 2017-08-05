@@ -18,12 +18,6 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     //language=SQL
-    @Query(value = "SELECT * " +
-            "FROM comment " +
-            "WHERE comment.text % :searchQuery order by similarity(text, :searchQuery) desc", nativeQuery = true)
-    List<Comment> getCommentsBySimilarity(@Param("searchQuery") String searchQuery);
-
-    //language=SQL
     @Query(value = "SELECT word " +
             "FROM dictionary "+
             "WHERE dictionary.word % :searchToken " +
