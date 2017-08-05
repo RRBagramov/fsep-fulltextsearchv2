@@ -21,21 +21,15 @@ public class CommentSearchDaoImpl implements CommentDao {
     private EntityManager entityManager;
 
     //language=SQL
-    private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_WITH_HEADLINE
+    private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY
             = "SELECT id, text, secondsfromstart " +
             "FROM comment, plainto_tsquery('ru', :searchQuery) query " +
             "WHERE fts @@ query OR comment.text ~* :searchQuery2";
 
-    //language=SQL
-    private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_BY_SIMILARITY_WITH_HEADLINE =
-            "SELECT id, text, secondsfromstart " +
-                    " *" +
-                    " FROM comment" +
-                    " WHERE comment.text % :searchQuery";
 
     @Override
     public List<Comment> getComments(String searchComment) {
-        List<Comment> list = entityManager.createNativeQuery(SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_WITH_HEADLINE, Comment.class)
+        List<Comment> list = entityManager.createNativeQuery(SQL_SELECT_COMMENTS_BY_SEARCH_QUERY, Comment.class)
                 .setParameter("searchQuery", "'" + searchComment + "'")
                 .setParameter("searchQuery2", ".*" + searchComment + ".*")
                 .getResultList();
@@ -44,23 +38,6 @@ public class CommentSearchDaoImpl implements CommentDao {
 
     @Override
     public List<Comment> getCommentsBySimilarity(String searchComment) {
-        String newSearchComment = "";
-
-        String delims = "[ .,?!]+";
-        String[] tokens = searchComment.split(delims);
-
-        for (String token : tokens) {
-            newSearchComment += commentRepository.getCorrectedWord("'" + token + "'") + " ";
-        }
-
-        List<Comment> comments = this.getComments("'" + newSearchComment + "'");
-
-        if (!comments.isEmpty()) {
-            return comments;
-        } else {
-            return entityManager.createNativeQuery(SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_BY_SIMILARITY_WITH_HEADLINE, "viewHighlight")
-                    .setParameter("searchQuery", newSearchComment)
-                    .getResultList();
-        }
+        return commentRepository.getCommentsBySimilarity(searchComment);
     }
 }
