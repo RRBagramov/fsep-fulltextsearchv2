@@ -26,6 +26,11 @@ public class CommentSearchDaoImpl implements CommentDao {
             "FROM comment, plainto_tsquery('ru', :searchQuery) query " +
             "WHERE fts @@ query OR comment.text ~* :searchQuery2";
 
+    //language=SQL
+    private final String SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_BY_SIMILARITY =
+            "SELECT id, text, secondsfromstart " +
+                    " FROM comment" +
+                    " WHERE comment.text % :searchQuery";
 
     @Override
     public List<Comment> getComments(String searchComment) {
@@ -38,6 +43,23 @@ public class CommentSearchDaoImpl implements CommentDao {
 
     @Override
     public List<Comment> getCommentsBySimilarity(String searchComment) {
-        return commentRepository.getCommentsBySimilarity(searchComment);
+        String newSearchComment = "";
+
+        String delims = "[ .,?!]+";
+        String[] tokens = searchComment.split(delims);
+
+        for (String token : tokens) {
+            newSearchComment += commentRepository.getCorrectedWord("'" + token + "'") + " ";
+        }
+
+        List<Comment> comments = this.getComments("'" + newSearchComment + "'");
+
+        if (!comments.isEmpty()) {
+            return comments;
+        } else {
+            return entityManager.createNativeQuery(SQL_SELECT_COMMENTS_BY_SEARCH_QUERY_BY_SIMILARITY, Comment.class)
+                    .setParameter("searchQuery", newSearchComment)
+                    .getResultList();
+        }
     }
 }
